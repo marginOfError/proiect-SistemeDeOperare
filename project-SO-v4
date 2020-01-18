@@ -1,0 +1,218 @@
+#include <iostream>
+#include <Windows.h>
+#include <cstdlib>
+#include <ctime>
+#include <conio.h>
+using namespace std;
+
+void clearscreen(); //pentru a preveni flicaritul/palpaitul
+
+void gotoxy(int x, int y)
+{
+	COORD p = { x, y };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), p);
+}
+
+int main()
+{
+	int y = 17, x = 9; //coordonatele jucatorului
+	srand(time(0));
+	int a = 0, b = rand() % 45 + 2; //coordonatele caramizii
+	int puncte = 0; 
+	int viteza = 100; 
+	int q = 0, p = rand() % 45 + 2; //coordonatele punctelor bonus
+	int verificPuncteBonus = 0; //balanseaza unde se spawneaza punctele bonus
+	int puncteCulese = 0;
+	bool startup = true;
+
+	char puncteBonus = '*';
+	char obstacol = 222;
+
+	int viata = 2;
+	char jucator = 'O';
+	char harta[25][50];
+	harta[y][x] = jucator;
+
+	char caracter = ' ';
+
+	//incarca harta cu spatii si linii
+	for (int i = 0; i < 20; ++i) {
+		for (int j = 0; j < 50; ++j) {
+			harta[i][0] = '|';
+			harta[i][48] = '|';
+			harta[i][j] = ' ';
+		}
+	}
+
+	for (;;) {
+		//clearscreen();
+		gotoxy(0, 0);
+		//plaseaza jucatorul la locatia default de start
+		harta[y - 1][x] = 'O';
+		harta[y][x + 1] = '\\';
+		harta[y][x - 1] = '//';
+		harta[y + 1][x - 1] = ']';
+		harta[y + 1][x + 1] = '[';
+		harta[y - 1][x - 1] = ' ';
+		harta[y - 1][x + 1] = ' ';
+
+		//genereaza obstacole
+		harta[a][b] = ' ';
+		harta[a][b + 1] = ' ';
+		harta[a][b - 1] = ' ';
+
+		++a;
+
+		harta[a][b] = obstacol;
+		harta[a][b + 1] = obstacol;
+		harta[a][b - 1] = obstacol;
+
+		if (a > 20) {            //daca obstacolul trece de dimensiunea 20 in lungime (lungimea ferestrei jocului)
+			a = 0;						//a este reinitializat pe pozitia 0 (zero)
+			b = rand() % 45 + 2;    //apare la intamplare pe cele 45 de pozitii libere     |	+2 pentru a nu pica pe pereti
+		}
+
+		cout << "click pentru pauza" << endl;
+		cout << "tasta pentru continue" << endl;
+		cout << endl;
+
+		//afiseaza harta
+		//i = coloana
+		//j = linie
+		for (int i = 0; i < 20; ++i) {
+			for (int j = 0; j < 50; ++j) {
+				cout << harta[i][j];
+				if (j >= 49) {
+					cout << endl;
+				}
+			}
+		}
+
+		cout << "	scor: " << puncte + (puncteCulese * 50) << " puncte" << endl;
+		cout << "	vieti: " << viata << endl;
+
+		if (startup) {
+			_getch();
+			startup = false;
+		}
+
+		if (GetAsyncKeyState(VK_LEFT)) {
+			if (harta[y][x - 3] == obstacol) {
+				goto lost;
+			}
+			else if (harta[y][x - 3] != '|') {
+				harta[y - 1][x] = ' ';
+				harta[y][x + 1] = ' ';
+				harta[y][x - 1] = ' ';
+				harta[y + 1][x - 1] = ' ';
+				harta[y + 1][x + 1] = ' ';
+				harta[y - 1][x - 1] = ' ';
+				harta[y - 1][x + 1] = ' ';
+
+				x -= 3;
+
+				harta[y - 1][x] = 'O';
+				harta[y][x + 1] = '\\';
+				harta[y][x - 1] = '//';
+				harta[y + 1][x - 1] = ']';
+				harta[y + 1][x + 1] = '[';
+				harta[y - 1][x - 1] = ' ';
+				harta[y - 1][x + 1] = ' ';
+			}
+		}
+
+		if (GetAsyncKeyState(VK_RIGHT)) {
+			if (harta[y][x + 3] == obstacol) {
+				goto lost;
+			}
+			else if (harta[y][x + 3] != '|') {
+				harta[y - 1][x] = ' ';
+				harta[y][x + 1] = ' ';
+				harta[y][x - 1] = ' ';
+				harta[y + 1][x - 1] = ' ';
+				harta[y + 1][x + 1] = ' ';
+				harta[y - 1][x - 1] = ' ';
+				harta[y - 1][x + 1] = ' ';
+
+				x += 3;
+
+				harta[y - 1][x] = 'O';
+				harta[y][x + 1] = '\\';
+				harta[y][x - 1] = '//';
+				harta[y + 1][x - 1] = ']';
+				harta[y + 1][x + 1] = '[';
+				harta[y - 1][x - 1] = ' ';
+				harta[y - 1][x + 1] = ' ';
+			}
+		}
+
+		//verifica daca jucatorul se loveste de caramida              (daca bolovanul ii pica in cap sau pe umeri)
+		//pierde o viata
+		if (harta[y - 2][x] == obstacol || harta[y - 2][x - 1] == obstacol || harta[y - 2][x + 1] == obstacol) {
+			viata -= 1;
+			cout << "mai ai doar o viata!";
+		}
+
+		//verifica daca jucatorul se loveste de caramida              (daca bolovanul ii pica in cap sau pe umeri)
+		//    lost
+		if (harta[y - 2][x] == obstacol || harta[y - 2][x - 1] == obstacol || harta[y - 2][x + 1] == obstacol) {
+			if (viata == 0) {
+			lost:
+				cout << "\n\nAAAAAA!\n" << endl;
+				cin.get();
+				return 0;
+			}
+		}
+
+		//verifica daca jucatorul a cules puncteBonus               (daca puncteBonus pica in cap sau pe umeri)
+		if (harta[y - 2][x] == puncteBonus || harta[y - 2][x - 1] == puncteBonus || harta[y - 2][x + 1] == puncteBonus) {
+			harta[y - 2][x] = ' ';
+			harta[y - 2][x - 1] = ' ';
+			harta[y - 2][x + 1] = ' ';
+			++puncteCulese;
+			q = 0;
+			p = rand() % 15 + 2;
+		}
+
+		//genereaza puncte bonus
+		else if (q > 20) {
+			q = 0;
+			p = rand() % 45 + 2;
+		}
+
+		//conditie pentru ca punctele bonus sa nu apara aproape de obstacole
+		if (a > 10) {
+			++verificPuncteBonus;
+		}
+
+		//plaseaza punctele bonus
+		if (verificPuncteBonus) {
+			harta[q][p] = ' ';
+			++q;
+			harta[q][p] = puncteBonus;
+		}
+		++puncte;
+
+		//viteza creste odata la 100 puncte adunate
+		//constat ca viteza creste vizibil dupa 1300 puncte adunate
+		//incercand		if(puncte%100==0)	jocul se opreste in jur de 1200
+		if (puncte == 100 || puncte == 200 || puncte == 300 || puncte == 400) {
+			viteza -= 25;
+		}
+		Sleep(viteza);
+	}
+	return 0;
+}
+
+void clearscreen()
+{
+	gotoxy(18,50);
+	HANDLE hOut;
+	COORD Position;
+
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	Position.X = 0;
+	Position.Y = 0;
+	SetConsoleCursorPosition(hOut, Position);
+}
